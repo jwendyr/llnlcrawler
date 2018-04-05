@@ -21,6 +21,7 @@ import argparse
 import sys
 import time
 import os
+import shutil
 
 import numpy as np
 import tensorflow as tf
@@ -81,6 +82,7 @@ if __name__ == "__main__":
 
   parser = argparse.ArgumentParser()
   parser.add_argument("--image", help="image to be processed")
+  parser.add_argument("--keep", help="keep this the category")
   parser.add_argument("--folder", help="image to be processed")
   parser.add_argument("--graph", help="graph/model to be executed")
   parser.add_argument("--labels", help="name of file containing labels")
@@ -96,6 +98,8 @@ if __name__ == "__main__":
     model_file = args.graph
   if args.image:
     file_name = args.image
+  if args.keep:
+	keep = args.keep
   if args.folder:
     folder_name = args.folder
   if args.labels:
@@ -112,54 +116,64 @@ if __name__ == "__main__":
     input_layer = args.input_layer
   if args.output_layer:
     output_layer = args.output_layer
-  
-  profolder = 'filter'
-
+ 
+  labels = load_labels(label_file)
+  profolder = 'filterout'
   if not os.path.exists(profolder):
-    os.makedirs(profolder)
+  	os.makedirs(profolder)
 
-  directory = os.fsencode(folder_name)
-  for file in os.listdir(directory):
-      file_name = os.fsdecode(file)
-      if file_name.endswith(".png") or file_name.endswith(".jpg") or file_name.endswith(".jpeg") or file_name.endswith(".gif"):
-          base_file, ext = os.path.splitext(file_name)
-          imagePath = file_name
-          if not(os.path.isfile(profolder+"/"+file_name)):
-              #os.chdir(jsonfolder)
-              #data = json.load(open(jsonfolder+"/"+file_name))
-              print (file_name)
-              graph = load_graph(model_file)
-              t = read_tensor_from_image_file(file_name,
-                                              input_height=input_height,
-                                              input_width=input_width,
-                                              input_mean=input_mean,
-                                              input_std=input_std)
+  ffolder = 'filter'
+  if not os.path.exists(ffolder):
+  	os.makedirs(ffolder)
 
-              input_name = "import/" + input_layer
-              output_name = "import/" + output_layer
-              input_operation = graph.get_operation_by_name(input_name);
-              output_operation = graph.get_operation_by_name(output_name);
+  for i in labels:
+  	if not os.path.exists(ffolder+"/"+i):
+  		if (i!=keep):
+  			os.makedirs(ffolder+"/"+i)
+  
+  graph = load_graph(model_file)
+  input_name = "import/" + input_layer
+  output_name = "import/" + output_layer
+  input_operation = graph.get_operation_by_name(input_name);
+  output_operation = graph.get_operation_by_name(output_name);
+  for file_name in os.listdir(folder_name):
+    if file_name.endswith(".jpg") or file_name.endswith(".png") or file_name.endswith(".jpeg"): 
+	  #print(os.path.join(folder_name, file_name))
+	  if not(os.path.isfile(profolder+"/"+file_name)):
+	  	#os.chdir(jsonfolder)
+		#data = json.load(open(jsonfolder+"/"+file_name))
+		print ("\n"+file_name)
+		ofile_name=file_name
+		file_name=folder_name+"/"+file_name
 
-              with tf.Session(graph=graph) as sess:
-                start = time.time()
-                results = sess.run(output_operation.outputs[0],
-                                  {input_operation.outputs[0]: t})
-                end=time.time()
-              results = np.squeeze(results)
+		t = read_tensor_from_image_file(file_name,
+                                  input_height=input_height,
+                                  input_width=input_width,
+                                  input_mean=input_mean,
+                                  input_std=input_std)
 
-              top_k = results.argsort()[-5:][::-1]
-              labels = load_labels(label_file)
+		with tf.Session(graph=graph) as sess:
+			start = time.time()
+			results = sess.run(output_operation.outputs[0],
+                      {input_operation.outputs[0]: t})
+			end=time.time()
+			results = np.squeeze(results)
 
-              print('\nEvaluation time (1-image): {:.3f}s\n'.format(end-start))
+		top_k = results.argsort()[-5:][::-1]
 
-              for i in top_k:
-                print(labels[i], results[i])
+		print('Evaluation time (1-image): {:.3f}s'.format(end-start))
 
-              #shutil.copy (jsonfolder+"/"+filename,profolder+"/"+filename)
-              #with open(folder+'/'+base_file+'.txt', 'w') as outfile:
-                  #json.dump(keywords, outfile, sort_keys = True, indent = 2, ensure_ascii = False)
-              #print (type(base_file))
-          continue
-      else:
-          continue
+		for i in top_k:
+			print(labels[i], results[i])
+		
+		if (labels[top_k[0]]!=keep):
+			#print ("move")
+			shutil.copy (folder_name+"/"+ofile_name,profolder+"/"+ofile_name)
+			shutil.move (folder_name+"/"+ofile_name,ffolder+"/"+labels[top_k[0]]+"/"+ofile_name)
+        #with open(folder+'/'+base_file+'.txt', 'w') as outfile:
+        #json.dump(keywords, outfile, sort_keys = True, indent = 2, ensure_ascii = False)
+        #print (type(base_file))
+	  continue
+    else:
+      continue
   print ('Finish')
