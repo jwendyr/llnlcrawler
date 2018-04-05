@@ -121,7 +121,7 @@ if __name__ == "__main__":
   directory = os.fsencode(folder_name)
   for file in os.listdir(directory):
       file_name = os.fsdecode(file)
-      if file_name.endswith(".txt") or file_name.endswith(".json"):
+      if file_name.endswith(".png") or file_name.endswith(".jpg") or file_name.endswith(".jpeg") or file_name.endswith(".gif"):
           base_file, ext = os.path.splitext(file_name)
           imagePath = file_name
           if not(os.path.isfile(profolder+"/"+file_name)):
