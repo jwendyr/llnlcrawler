@@ -127,8 +127,8 @@ if __name__ == "__main__":
   	os.makedirs(ffolder)
   
   pfolder = 'filtered'
-  if not os.path.exists(ffolder):
-  	os.makedirs(ffolder)
+  if not os.path.exists(pfolder):
+  	os.makedirs(pfolder)
 
   for i in labels:
   	if not os.path.exists(ffolder+"/"+i):
