@@ -125,6 +125,10 @@ if __name__ == "__main__":
   ffolder = 'filter'
   if not os.path.exists(ffolder):
   	os.makedirs(ffolder)
+  
+  pfolder = 'filtered'
+  if not os.path.exists(ffolder):
+  	os.makedirs(ffolder)
 
   for i in labels:
   	if not os.path.exists(ffolder+"/"+i):
@@ -139,7 +143,7 @@ if __name__ == "__main__":
   for file_name in os.listdir(folder_name):
     if file_name.endswith(".jpg") or file_name.endswith(".png") or file_name.endswith(".jpeg"): 
 	  #print(os.path.join(folder_name, file_name))
-	  if not(os.path.isfile(profolder+"/"+file_name)):
+	  if not(os.path.isfile(pfolder+"/"+file_name)):
 	  	#os.chdir(jsonfolder)
 		#data = json.load(open(jsonfolder+"/"+file_name))
 		print ("\n"+file_name)
@@ -166,10 +170,13 @@ if __name__ == "__main__":
 		for i in top_k:
 			print(labels[i], results[i])
 		
+		shutil.copy (folder_name+"/"+ofile_name,pfolder+"/"+ofile_name)
+		
 		if (labels[top_k[0]]!=keep):
 			#print ("move")
+			shutil.copy (folder_name+"/"+ofile_name,ffolder+"/"+labels[top_k[0]]+"/"+ofile_name)
+		else:
 			shutil.copy (folder_name+"/"+ofile_name,profolder+"/"+ofile_name)
-			shutil.move (folder_name+"/"+ofile_name,ffolder+"/"+labels[top_k[0]]+"/"+ofile_name)
         #with open(folder+'/'+base_file+'.txt', 'w') as outfile:
         #json.dump(keywords, outfile, sort_keys = True, indent = 2, ensure_ascii = False)
         #print (type(base_file))
